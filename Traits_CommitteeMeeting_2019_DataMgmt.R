@@ -1,5 +1,8 @@
 ### Data Mgmt Code for Trait Data 2017 
-setwd("/Users/MagdaGarbowski/Traits_2017_Grasses/Fall 2019/CommitteeMeeting/")
+### November 27, 2019 
+### 2017 Trait data - Traits through time 
+
+setwd("/Users/MagdaGarbowski/CommitteeMeeting/")
 
 # Load data 
 
