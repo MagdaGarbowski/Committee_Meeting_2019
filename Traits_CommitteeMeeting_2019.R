@@ -1,6 +1,6 @@
 # Committee Meeting - Dec 2019 
 # November 27, 2019 
-# 2017 Trait data - Traits through time 
+# 2017 Trait data - Traits through time   
 
 setwd("/Users/MagdaGarbowski/CommitteeMeeting") 
 
