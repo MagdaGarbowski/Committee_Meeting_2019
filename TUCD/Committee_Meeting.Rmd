@@ -1,0 +1,81 @@
+---
+output:
+ 
+   pdf_document: default
+   word_document: 
+   html_document: 
+      fig_height: 6.5
+      fig_width: 11
+---
+
+```{r setup, include=F}
+knitr::opts_chunk$set(echo = TRUE)
+library(plyr)
+library(ggplot2)
+library(gridExtra)
+library(knitr)
+library(markdown)
+opts_knit$set(root.dir = "/Users/MagdaGarbowski/CommitteeMeeting/")
+```
+### Garbowski Committee Meeting (Dec 4, 2019)
+### Agenda
+* Discuss plan for dissertation chapters
+    + Chapter 1: Traits of restoration species vary by ontogenetic stage 
+    + Chapter 2: Responses of cultivars and natural accessions of *Elymus trachycaulus* to drought and competition 
+    + Chapter 3: Options 
+        - Second manuscript from MS project
+        - Outdoor *E trachycaulus* study (if independent of Ch. 2)
+        - Review: Root traits in ecological restoration  
+* Involvement of committee members in preparing manuscripts  
+* Set defense date? 
+
+### Chapter 1: Traits of restoration species vary by ontogenetic stage  
+* Data: Traits were measured from 10 native species (3-6 accessions of each) that are being developed for restoration in the southwestern US at four developmental stages (10, 24, 42, 84 days old) (Table 1).
+* Issues: 
+    + I didn't replicate appropriately at the population level so making comparisons among populations of the same species may be difficult. 
+    + I am having trouble fitting a model for RMR and A ~Root~:A~Leaf~. Sampling occurs outside of the 0-1 interval. 
+    + Some values for SLA and SRL seem *very* high compared to values in the literature. But, studies suggest that young plants (e.g. Lusk 2004 Functional Ecology, Villar et al. 2005 Plant and Soil, Poorter et al. 2009 New Phytologist) or plants grown in greenhouse conditions may have higher SLA. 
+* Status: I've worked through comparisons of SLA, SRL, RMR by ontogenetic stage for seven of the 10 species. I still need to look at growth rate. It seems like some species and traits are more variable than others but no obvious trends have emerged. 
+* Questions for committee : 
+    + Ideas about other ways to look at the data? 
+    + Should I be concerned about phylogenetic relationships when making comparisons among species? Most of the species I worked with are in the Aster and Poa families. 
+
+Traits | Species
+-------------| -------------
+SLA (Specific leaf area) | *Achillea millefolium* (Asteraceae)
+SRL (Specific root length) | *Elymus trachycaulus* (Poaceae)
+RMR (Root mass ratio) | *Helianthus annuus* (Asteraceae)
+A ~Root~:A~Leaf~ (Root Area : Leaf Area) | *Heterotheca villosa* (Asteraceae)
+Height | *Hesperostipa comata* (Poaceae)
+Biomass (root & shoot) | *Machaeranthera canescens* (Asteraceae)
+LDMC (Leaf dry matter content) | *Muhlenbergia porteri* (Poaceae)
+Seed mass | *Packera multilobata* (Asteraceae)
+Growth rate | *Plantago patagonica* (Plantaginaceae)
+  || *Vulpia octoflora* (Poaceae)
+Table: Traits and species measured. 
+
+![Means and 90% credible intervals of species' specific leaf area and specific root length at different developmental stages. Diamonds in shades of grey are grasses, circles in shades of blue are forbs.](/Users/MagdaGarbowski/CommitteeMeeting/SLA_SRL_HComparison_Figures.pdf)
+
+![Posterior densities of SLA, SRL, RMR, and A ~Root~: A~Leaf~ at different ontogenetic stages](/Users/MagdaGarbowski/CommitteeMeeting/Traits_2017_Figures.pdf)
+
+### Chapter 2: Responses of cultivars and natural accessions of *Elymus trachycaulus* to drought and competition 
+
+* Data: 
+    + **Experiment 1**: We grew individuals of nine *E. trachycaulus* accessions under drought, competition, and control in the greenhouse. We worked with four cultivars and five "natural" accessions. Plants were harvested and measured at 12 days and 24 days old. Traits measured include: SLA, SRL, LDMC, RMR, biomass, root forks/tips
+    + **Experiment 2**: We grew individuals of nine *E. trachycaulus* accessions **together** under drought, competition, and control outdoors in pots. "Groups" were developed to have varied levels of intraspecific diversity (one, two, four and six accessions) to assess the effects of intraspecific diversity on species and group biomass.
+* Issues: The drought outdoors may not have been extreme enough. 
+* Status: Experiment 1 is complete but I need to reweigh many "zeros" from the 12 day harvest. At the 24 day harvest, there appears to be little variation in SLA and SRL responses to treatments. Biomass and RMR are a bit more interesting (Fig. 3). Experiment 2 was harvested in late August. We are still washing roots and weighing biomass. 
+* Questions for committee: 
+    + Ideas about how to analyze the data? 
+        - I think looking at effect sizes may be more informative than comparing means. 
+    + One chapter or two?
+    
+![Five of nine accessions of E trachycaulus under control and drought (Experiment 1). What I think is interesting is the accession x treatment interaction that is observed *above* but not belowground. Accessions begining with "CULT" are cultivars.](/Users/MagdaGarbowski/CommitteeMeeting/TUCD_h2_Control_Drought.pdf)
+\ 
+Figure 3: Means of aboveground and belowground biomass +/- SE of the mean for five of nine accessions of *E. trachycaulus* under control and drought (Experiment 1, 24 Day Harvest). Accession x treatment interaction observed only aboveground. Accessions beginning with CULT are cultivars.
+
+### Chapter 3 
+
+* Option 1: Manuscript from second part of MS project in which we assessed the effects of *B tectorum* (cheatgrass), drought, and super-absorbent polymer on developing plant communities and soil moisture. Submitted to Ecosphere. 
+* Option 2: Split Chapter 2 into two chapters 
+* Option 3: Review of "How root traits can inform ecological restoration". I have been leading a seminar focused on root traits in ecological restoration. As of now, participants (18 students) have identified ~500 papers that fall under four restoration goals: drought, competition/invasion, soil stability (chemical and physical), and carbon sequestration. I suspect that we will have 12+ individuals contributing to the manuscript primarily to develop topic sections. 

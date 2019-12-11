@@ -1,0 +1,44 @@
+---
+title: "Garbowski Committee Meeting"
+author: "Magda Garbowski"
+date: "12/4/2019"
+output: beamer_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(plyr)
+library(ggplot2)
+library(gridExtra)
+library(knitr)
+library(markdown)
+opts_knit$set(root.dir = "/Users/MagdaGarbowski/CommitteeMeeting/")
+```
+
+## Agenda
+* Discuss plan for dissertation chapters
+    + Chapter 1: Traits of restoration species vary by ontogenetic stage 
+    + Chapter 2: Responses of cultivars and natural accessions of *Elymus trachycaulus* to drought and competition 
+    + Chapter 3: Options 
+        - Second manuscript from MS project
+        - Outdoor *E trachycaulus* study (if independent of Ch. 2)
+        - Review: Root traits in ecological restoration  
+* Involvement of committee members in preparing manuscripts  
+* Set defense date? 
+
+## Chapter 1: Traits by developmental stage
+
+![Means and 90% credible intervals of species' specific leaf area and specific root length at different developmental stages. Diamonds in shades of grey are grasses, circles in shades of blue are forbs.](/Users/MagdaGarbowski/CommitteeMeeting/SLA_SRL_HComparison_Figures.pdf){ width=80%, height=60% }
+
+
+## Chapter 2: Responses of cultivars and natural accessions of *Elymus trachycaulus* to drought and competition  
+
+![Means of aboveground and belowground biomass +/- SE of the mean for five of nine accessions of *E. trachycaulus* under control and drought (Experiment 1, 24 Day Harvest). Accession x treatment interaction observed only aboveground. Accessions beginning with CULT are cultivars.](/Users/MagdaGarbowski/CommitteeMeeting/TUCD_h2_Control_Drought.pdf){ width=50%, height=50% }
+
+## Chapter 3: Options 
+* Option 1: Manuscript from second part of MS project in which we assessed the effects of *B tectorum* (cheatgrass), drought, and super-absorbent polymer on developing plant communities and soil moisture. Submitted to Ecosphere. 
+* Option 2: Split Chapter 2 into two chapters 
+* Option 3: Review of "How root traits can inform ecological restoration". 
+
+
+
