@@ -2,199 +2,244 @@
 # November 27, 2019 
 # 2017 Trait data - Traits through time   
 
+# Things to do next (as of Jan 8, 2020) 
+# (1) Clean up code - make more functions? 
+# (2) Split groups into : Annuals, perennial grasses, perennial forbs
+# (2) will have to be done in data mgmt code
+# (3) Add species and growthform columns to growth rate dataset and plot 
+# (4) WTF is going on with RDMC PAMU at H_3 ? 
+
 setwd("/Users/MagdaGarbowski/CommitteeMeeting") 
 
+library(rstanarm)
 library(rstan)
 library(plyr)
 library(data.table)
 library(ggplot2)
 library(grid)
 library(gridExtra)
-library(brms)
 library(tidybayes)
 library(ggridges)
 library(ggmcmc)
+library(bayesplot)
 
 # Data - from "Traits_CommitteeMeeting_2019_DataMgmt.R"
 
 SpeciesData<-read.csv("TraitData_2017.csv") 
-# Make RMR and RALAR 0-100 not 0-1 because model sucks
-SpeciesData$RMR_100<-SpeciesData$RMR * 100 
-SpeciesData$RALAR_100<-SpeciesData$RALAR * 100
+# SpeciesData_Growthrate<-read.csv("TraitData_GrowthRates_2017.csv")
 
 SpeciesData$H_num<-as.factor(SpeciesData$H_num)
 Species_splits = split(SpeciesData, paste(SpeciesData$SPECIES))
 
-# Functions 
-# To get posteriors and get them into long format
-get_posteriors<-function(models) {
-  tmp1<-posterior_samples(models, pars = "^b")
-  tmp2<-melt(setDT(tmp1), id.vars = c(), variable.name = "Harvest")
-  print(tmp2)
+### R-stan arm models
+
+
+# SLA 
+SLA_rstanarm <- function (df) {
+  stan_lmer(SLA ~ 0 + H_num + (1|POP_ID), 
+            data = df,
+            prior_intercept = student_t(3,0,30), 
+            adapt_delta = 0.999)
 }
 
-# Wide to long format 
-posteriors_long <- function (posteriors) {
-  melt(setDT(posteriors), id.vars = c(), variable.name = "Harvest")
+# LDMC 
+LDMC_rstanarm <- function (df) {
+  stan_lmer(LDMC ~ 0 + H_num + (1|POP_ID), 
+            data = df,
+            prior_intercept = student_t(3,0,30), 
+            adapt_delta = 0.999)
 }
 
-# Plot density functions 
-density_plot_function<-function(data, lims, annotate_text, x, y){
-  ggplot(data, aes(x = value, y = Harvest)) + 
-    scale_x_continuous(limits = lims)+
-    scale_y_discrete("", 
-                     labels = c("b_H_num1" = "10", "b_H_num2" = "24", "b_H_num3" = "42", "b_H_num4" = "84"))+
-    geom_density_ridges(scale = .9, bandwidth = 14, rel_min_height = 0.01,
-                        fill = "grey75", colour = "black")  + 
-    theme(axis.title.x = element_blank(),
-          axis.title.y = element_blank())+
-    annotate(geom = "text", label = annotate_text, x, y )
+# SRL 
+SRL_rstanarm <- function (df) {
+  stan_lmer(SRL ~ 0 + H_num + (1|POP_ID), 
+            data = df,
+            prior_intercept = student_t(3,0,30), 
+            adapt_delta = 0.999)
 }
 
-# Specific root length model 
-SRL_mod = function(df)
-{   brm(
-  SRL ~ 0 + H_num + (1|POP_ID),
-  data = df,
-  family = gaussian(),
-  warmup = 3000, iter = 10000, chains = 4,  
-  control = list(adapt_delta = 0.99), 
-  save_all_pars = TRUE, cores= 4)
+# RMR 
+RMR_rstanarm <- function (df) {
+  stan_lmer(RMR ~ 0 + H_num + (1|POP_ID), 
+            data = df,
+            prior_intercept = student_t(3,0,30), 
+            adapt_delta = 0.999)
+}
+
+# RDMC 
+RDMC_rstanarm <- function (df) {
+  stan_lmer(RDMC ~ 0 + H_num + (1|POP_ID), 
+            data = df,
+            prior_intercept = student_t(3,0,30), 
+            adapt_delta = 0.999)
+}
+
+# RTD 
+RTD_rstanarm <- function (df) {
+  stan_lmer(RTD ~ 0 + H_num + (1|POP_ID), 
+            data = df,
+            prior_intercept = student_t(3,0,30), 
+            adapt_delta = 0.999)
 }
 
 
-# Specific leaf area model 
-SLA_mod = function(df)
-{   brm(
-  SLA ~ 0 + H_num + (1|POP_ID),
-  data = df,
-  family = gaussian(),
-  warmup = 3000, iter = 10000, chains = 4,  
-  control = list(adapt_delta = 0.99), 
-  save_all_pars = TRUE, cores= 4)
+
+posterior_medians_intervals <- function(df){
+  as.data.frame(summary(df, regex_pars = "H_num", digits = 2, probs = c(0.1, 0.5, 0.9)))
 }
 
-# Root mass ratio model - needs work - probably needs a different distribution?
-
-RMR_mod = function(df)
-{   brm(
-  RMR_100 ~ 0 + H_num + (1|POP_ID),
-  data = df,
-  family = gaussian(),
-  warmup = 3000, iter = 10000, chains = 4,  
-  control = list(adapt_delta = 0.99), 
-  save_all_pars = TRUE, cores= 4)
+# Make into single dataframe for plotting 
+dat_frame_function<-function(df){
+  tmp<-do.call(rbind.data.frame, df)
+  tmp$names<-rownames(tmp)
+  tmp_2<- data.frame(do.call('rbind', strsplit(as.character(tmp$names),'.',fixed=TRUE)))
+  tmp_2$GrowthForm<- ifelse(tmp_2$X1 %in% c("ACMI","ARTR","HEAN","HEVI","MACA","PAMU","PLPA"), "FORB", "GRASS")
+  tmp_3<-cbind(tmp, tmp_2)
+  names(tmp_3)[names(tmp_3) %in% c( "10%","50%", "90%", "X1","X2")]<-c( "lower_CI","Median", "upper_CI","Species","Harvest")
+  print(tmp_3)
 }
 
-# RALAR - needs work - probably needs a different distribution? 
-RALAR_mod = function(df)
-{   brm(
-  RALAR_100 ~ 0 + H_num + (1|POP_ID),
-  data = df,
-  family = gaussian(),
-  warmup = 3000, iter = 10000, chains = 4,  
-  control = list(adapt_delta = 0.99), 
-  save_all_pars = TRUE, cores= 4)
+# Plot 
+plot_function<-function(df,growthform, colors, shapes, Trait){
+  ggplot(data = df[df$GrowthForm %in% c(growthform),], 
+         aes (x = Harvest, y = Median, group = Species, shape = Species)) + 
+    geom_errorbar(aes(ymin = lower_CI, ymax = upper_CI), 
+                  width = 0.1, position=position_dodge(width = 0.2), color = "gray60")+
+    geom_line(position=position_dodge(width = 0.2), size = .3)+
+    geom_point(aes(fill = Species), size = 4, position=position_dodge(width = 0.2))+
+    scale_shape_manual(values = shapes)+ 
+    scale_fill_manual(values = colors)+ 
+    scale_x_discrete(breaks = c("H_num1","H_num2","H_num3","H_num4"),
+                     labels = c("10", "24","42","84"))+
+    ylab(Trait)+
+    theme_bw() + 
+    theme(axis.text=element_text(size=12),
+          plot.title = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_text(size = 14))
 }
 
-# GET VALUES 
-# SRL_mods<-lapply(Species_splits, SRL_mod)
-SRL_posteriors_long <- lapply(SRL_mods, get_posteriors) 
+SLA_rstanarm_mods<-lapply(Species_splits, SLA_rstanarm)
+posterior_medians_intervals_SLA<-lapply(SLA_rstanarm_mods, posterior_medians_intervals)
+Medians_intervals_SLA<-dat_frame_function(posterior_medians_intervals_SLA)
 
-# SLA_mods<-lapply(Species_splits, SLA_mod)
-SLA_posteriors_long <- lapply(SLA_mods, get_posteriors) 
+LDMC_rstanarm_mods<-lapply(Species_splits, LDMC_rstanarm)
+posterior_medians_intervals_LDMC<-lapply(LDMC_rstanarm_mods, posterior_medians_intervals)
+Medians_intervals_LDMC<-dat_frame_function(posterior_medians_intervals_LDMC)
 
-# RMR_mods<-lapply(Species_splits, RMR_mod)
-RMR_posteriors_long <- lapply(RMR_mods, get_posteriors) 
+SRL_rstanarm_mods<-lapply(Species_splits, SRL_rstanarm)
+posterior_medians_intervals_SRL<-lapply(SRL_rstanarm_mods, posterior_medians_intervals)
+Medians_intervals_SRL<-dat_frame_function(posterior_medians_intervals_SRL)
 
-#RALAR_mods<-lapply(Species_splits, RALAR_mod)
-RALAR_posteriors_long <- lapply(RALAR_mods, get_posteriors) 
+RMR_rstanarm_mods<-lapply(Species_splits, RMR_rstanarm)
+posterior_medians_intervals_RMR<-lapply(RMR_rstanarm_mods, posterior_medians_intervals)
+Medians_intervals_RMR<-dat_frame_function(posterior_medians_intervals_RMR)
 
-# PLOTS 
-# Specific root length 
-SRL_plots<-lapply(SRL_posteriors_long, density_plot_function, 
-                  lims = c(-250, 1000),
-                  annotate_text = "SRL", x = 825, y = 4)
+RDMC_rstanarm_mods<-lapply(Species_splits, RDMC_rstanarm)
+posterior_medians_intervals_RDMC<-lapply(RDMC_rstanarm_mods, posterior_medians_intervals)
+Medians_intervals_RDMC<-dat_frame_function(posterior_medians_intervals_RDMC)
 
-# Specific leaf area 
-SLA_plots<-lapply(SLA_posteriors_long, density_plot_function, 
-                  lims = c(-15, 1500),
-                  annotate_text = "SLA", x = 1250, y = 3.5)
-
-# Root Mass Ratio 
-RMR_plots<-lapply(RMR_posteriors_long, density_plot_function, 
-                  lims = c(-25, 100),
-                  annotate_text = "RMR", x = -10, y = 1.5)
-
-# Root area to leaf area ratio 
-RALAR_plots<-lapply(RALAR_posteriors_long, density_plot_function, 
-                    lims = c(-25, 120),
-                    annotate_text = "RL Area", x = 95, y = 3.5)
-
-#
-#
-#
-# SPECIES COMPARISON GRAPHS 
-# Plot all species by harvest time - function 
-Species_comparsion_plots<-function(data, yvar) {
-  ggplot(data, aes(x = Species, y = mean, group = Species, fill = Species))+
-    geom_errorbar(aes(ymin = CI_low, ymax = CI_high))+
-    labs(y = yvar)+
-    geom_point(aes(shape = Species, fill = Species ), size = 4) +
-    scale_shape_manual(values=c(23,21,23,21,21,23,21))+
-    scale_fill_manual(values = c("gray31","dodgerblue3","gray55", "dodgerblue1", "royalblue3","grey75","royalblue1"))+
-    facet_grid(. ~ Harvest)+
-    theme_bw()+
-    theme(axis.title.x = element_blank())
-}
-
-# Get 90% credible intervales function 
-CIfunction<-function (x){
-  round(t(apply(x[ ,c("b_H_num2","b_H_num3","b_H_num4")], 2, quantile, c(.5, .05, .95))), digits = 2)
-}
-
-# Get CI - SLA 
-CIs_SLA<-lapply(SLA_posteriors, CIfunction)
-CIs_SLA_bound<-ldply(CIs_SLA, rbind)    # Is there a different way to do this? 
-CIs_SLA_bound$harvest<-rep(c("24 Days","42 Days","84 Days"))
-names(CIs_SLA_bound)<-c("Species","mean","CI_low","CI_high","Harvest")
-CIs_SLA_bound$Species<-factor(CIs_SLA_bound$Species, levels = c("VUOC","PLPA","ELTR","PAMU","HEVI","HECO","ACMI")) 
-
-# Get CI - SRL 
-CIs_SRL<-lapply(SRL_posteriors, CIfunction)
-CIs_SRL_bound<-ldply(CIs_SRL, rbind)    # Is there a different way to do this? 
-CIs_SRL_bound$harvest<-rep(c("24 Days","42 Days","84 Days"))
-names(CIs_SRL_bound)<-c("Species","mean","CI_low","CI_high","Harvest")
-CIs_SRL_bound$Species<-factor(CIs_SRL_bound$Species, levels = c("VUOC","PLPA","ELTR","PAMU","HEVI","HECO","ACMI")) 
-
-# Plots 
-SLA_Hcomp_plot <- Species_comparsion_plots(CIs_SLA_bound, expression("SLA"~ (cm^{2} ~ g^{-1} )))
-SRL_Hcomp_plot <- Species_comparsion_plots(CIs_SRL_bound, expression("SRL"~ (cm ~ g^{-1})))
+RTD_rstanarm_mods<-lapply(Species_splits, RTD_rstanarm)
+posterior_medians_intervals_RTD<-lapply(RTD_rstanarm_mods, posterior_medians_intervals)
+Medians_intervals_RTD<-dat_frame_function(posterior_medians_intervals_RTD)
 
 
-## PDFS of plots 
 
-pdf("~/Downloads/Traits_2017_Figures.pdf", height=12, width=8)
-grid.arrange(arrangeGrob(SLA_plots$VUOC, SRL_plots$VUOC, RMR_plots$VUOC,RALAR_plots$VUOC, ncol = 4, 
-                         top = textGrob ("Vulpia octoflora", gp = gpar (fontsize = 10))),
-             arrangeGrob(SLA_plots$HECO, SRL_plots$HECO, RMR_plots$HECO,RALAR_plots$HECO,ncol = 4, 
-                         top = textGrob ("Hesperostipa comata", gp = gpar (fontsize = 10))),
-             arrangeGrob(SLA_plots$ELTR, SRL_plots$ELTR, RMR_plots$ELTR,RALAR_plots$ELTR, ncol = 4, 
-                         top = textGrob ("Elymus trachycaulus", gp = gpar (fontsize = 10))),
-             arrangeGrob(SLA_plots$PLPA, SRL_plots$PLPA, RMR_plots$PLPA,RALAR_plots$PLPA,ncol = 4, 
-                         top = textGrob ("Plantago patagonica", gp = gpar (fontsize = 10))),
-             arrangeGrob(SLA_plots$PAMU, SRL_plots$PAMU,RMR_plots$PAMU,RALAR_plots$PAMU,ncol = 4, 
-                         top = textGrob ("Packera multilobata", gp = gpar (fontsize = 10))),
-             arrangeGrob(SLA_plots$HEVI, SRL_plots$HEVI,RMR_plots$HEVI,RALAR_plots$HEVI, ncol = 4, 
-                         top = textGrob ("Heterotheca villosa", gp = gpar (fontsize = 10))),
-             left = textGrob("Days", rot = 90, vjust = 1, gp = gpar (fontsize = 12)),
-             nrow= 6)
+# Plotting
+
+SRL_GRASS_plot<-plot_function(Medians_intervals_SRL, "GRASS",  
+              c("blue3", "violetred4","navajowhite2","grey65" ),
+              c(21,21,21,21,21), 
+              "SRL")
+
+SRL_FORB_plot<-plot_function(Medians_intervals_SRL, "FORB",  
+                             c("coral2", "chartreuse4", "grey85","goldenrod3",
+                             "plum4","seagreen3","grey65"), 
+                             c(22,22,22,22,22,22,22,22),
+                             "SRL")
+
+SLA_GRASS_plot<-plot_function(Medians_intervals_SLA, "GRASS",  
+                              c("blue3", "violetred4","navajowhite2","grey65" ),
+                              c(21,21,21,21,21), 
+                              "SLA")
+
+SLA_FORB_plot<-plot_function(Medians_intervals_SLA, "FORB",  
+                             c("coral2", "chartreuse4", "grey85","goldenrod3",
+                               "plum4","seagreen3","grey65"), 
+                             c(22,22,22,22,22,22,22,22),
+                             "SLA")
+
+LDMC_GRASS_plot<-plot_function(Medians_intervals_LDMC, "GRASS",  
+                              c("blue3", "violetred4","navajowhite2","grey65" ),
+                              c(21,21,21,21,21), 
+                              "LDMC")
+
+LDMC_FORB_plot<-plot_function(Medians_intervals_LDMC, "FORB",  
+                             c("coral2", "chartreuse4", "grey85","goldenrod3",
+                               "plum4","seagreen3","grey65"), 
+                             c(22,22,22,22,22,22,22,22),
+                             "LDMC")
+
+RMR_GRASS_plot<-plot_function(Medians_intervals_RMR, "GRASS",  
+                               c("blue3", "violetred4","navajowhite2","grey65" ),
+                               c(21,21,21,21,21), 
+                               "RMR")
+
+RMR_FORB_plot<-plot_function(Medians_intervals_RMR, "FORB",  
+                              c("coral2", "chartreuse4", "grey85","goldenrod3",
+                                "plum4","seagreen3","grey65"), 
+                              c(22,22,22,22,22,22,22,22),
+                              "RMR")
+
+
+RDMC_GRASS_plot<-plot_function(Medians_intervals_RDMC, "GRASS",  
+                              c("blue3", "violetred4","navajowhite2","grey65" ),
+                              c(21,21,21,21,21), 
+                              "RDMC")
+
+RDMC_FORB_plot<-plot_function(Medians_intervals_RDMC, "FORB",  
+                             c("coral2", "chartreuse4", "grey85","goldenrod3",
+                               "plum4","seagreen3","grey65"), 
+                             c(22,22,22,22,22,22,22,22),
+                             "RDMC")
+
+
+RTD_GRASS_plot<-plot_function(Medians_intervals_RTD, "GRASS",  
+                               c("blue3", "violetred4","navajowhite2","grey65" ),
+                               c(21,21,21,21,21), 
+                               "RTD")
+
+RTD_FORB_plot<-plot_function(Medians_intervals_RTD, "FORB",  
+                              c("coral2", "chartreuse4", "grey85","goldenrod3",
+                                "plum4","seagreen3","grey65"), 
+                              c(22,22,22,22,22,22,22,22),
+                              "RTD")
+
+pdf("~/CommitteeMeeting/Figures_Reports/Grass_figs.pdf", height=8, width=8)
+grid.arrange(SLA_GRASS_plot, LDMC_GRASS_plot, 
+             SRL_GRASS_plot, RMR_GRASS_plot,
+             RDMC_GRASS_plot, RTD_GRASS_plot, ncol = 2 )
+
 dev.off()
 
-
-pdf("~/Downloads/SLA_SRL_HComparison_Figures.pdf", height=7, width=10)
-grid.arrange(arrangeGrob(SLA_Hcomp_plot, ncol = 1, top = textGrob ("SLA Comparisons through time", gp = gpar (fontsize = 12))),
-             arrangeGrob(SRL_Hcomp_plot, ncol = 1, top = textGrob ("SRL Comparisons through time", gp = gpar (fontsize = 12))),
-             nrow = 2)
+pdf("~/CommitteeMeeting/Figures_Reports/Forb_figs.pdf", height=8, width=8)
+grid.arrange(SLA_FORB_plot, LDMC_FORB_plot, 
+                          SRL_FORB_plot, RMR_FORB_plot,
+                          RDMC_FORB_plot, RTD_FORB_plot, ncol = 2 )
 dev.off()
+
+# Get species titles onto plots - fix below code for plotting 
+
+posterior_plots<- function(df){
+  mcmc_areas(df,
+             regex = c("H_num"),
+             prob = 0.8)
+}
+
+posterior_plots_SRL<-lapply(posteriors_SRL, posterior_plots)
+
+n <- length(posterior_plots_SRL)
+nCol <- floor(sqrt(n))
+do.call("grid.arrange", c(posterior_plots_SRL, ncol=nCol))
+
 
